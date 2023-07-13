@@ -33,7 +33,7 @@ public class Admin{
     public void login(){
         System.out.println("\n=========管理员登录=========");
         System.out.print("用户名：");
-        String username = scanner.next();
+        String adminname = scanner.next();
         System.out.print("密码：");
         String password = scanner.next();
 
@@ -41,7 +41,7 @@ public class Admin{
         String query = "SELECT * FROM admins WHERE username = ? AND password = ?";
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, username);
+            preparedStatement.setString(1, adminname);
             preparedStatement.setString(2, password);
             ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -89,10 +89,9 @@ public class Admin{
         }
     }
 
-    //管理员重置用户密码
-    public void resetUserPassword(){
-        
-    }
+    
+
+
 
     //列出所有客户信息
     public void listCustomers(){

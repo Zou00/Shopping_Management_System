@@ -19,7 +19,7 @@ public class Main{
 
         boolean exit=true;
         while(exit){
-            System.out.println("\n欢迎进入购物管理系统");
+            System.out.println("\n-----欢迎进入购物管理系统-----");
             System.out.println("\n==========身份选择==========");
             System.out.println("|=========1.管理员=========|");
             System.out.println("|=========2.用户 ==========|");
@@ -98,7 +98,7 @@ public class Main{
                     admin.changePassword();
                     break;
                 case 2:
-                    admin.resetUserPassword();
+                    user.resetUserPassword();
                     break;
                 case 0:
                     exit=false;

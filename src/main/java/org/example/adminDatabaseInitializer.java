@@ -12,20 +12,19 @@ public class adminDatabaseInitializer{
         try (Connection connection = DriverManager.getConnection(DB_URL);
              Statement statement = connection.createStatement()) {
 
-            String createTableQuery = "CREATE TABLE IF NOT EXISTS admins (" +
+            String createTableQuery1= "CREATE TABLE IF NOT EXISTS admins (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "username TEXT NOT NULL," +
                     "password TEXT NOT NULL" +
                     ")";
-            statement.executeUpdate(createTableQuery);
+            statement.executeUpdate(createTableQuery1);
 
-            String insertDataQuery = "INSERT INTO admins (username, password) VALUES " +
+            String insertDataQuery1 = "INSERT INTO admins (username, password) VALUES " +
                     "('admin1', 'password1')," +
-                    "('admin2', 'password2'),"+
-                    "('admin3','password3')";
-            statement.executeUpdate(insertDataQuery);
+                    "('admin2', 'password2')";
+            statement.executeUpdate(insertDataQuery1);
 
-            System.out.println("管理员数据库初始化成功");
+            System.out.println("管理员数据库初始化成功!");
 
         } catch (SQLException e) {
             e.printStackTrace();
