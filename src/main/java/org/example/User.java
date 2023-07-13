@@ -11,8 +11,6 @@ import java.sql.SQLException;
 
 public class User{
     private static final String DB_URL = "jdbc:sqlite:User.db";
-    private static final String DB_USER = "";
-    private static final String DB_PASSWORD = "";
 
     private Connection connection;
     private Statement statement;
@@ -20,14 +18,15 @@ public class User{
 
     public User(){
         try {
-            connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+            connection = DriverManager.getConnection(DB_URL);
             statement = connection.createStatement();
             scanner = new Scanner(System.in);
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
-
+    
+    //管理员重置用户密码
     public void resetUserPassword(){
         System.out.print("请输入要重置密码的用户名：");
         String username=scanner.next();
@@ -53,6 +52,7 @@ public class User{
         }
     }
 
+    //查找用户是否存在
     private boolean userExists(String username) throws SQLException {
         String query = "SELECT * FROM users WHERE username = ?";
         PreparedStatement preparedStatement = connection.prepareStatement(query);
@@ -61,6 +61,77 @@ public class User{
         boolean exists = resultSet.next();
         preparedStatement.close();
         return exists;
+    }
+
+    //列出所有客户信息
+    public void listCustomers(){
+        String query="SELECT username,phone FROM users";
+        try{
+            ResultSet resultSet=statement.executeQuery(query);
+            System.out.println("\n--------客户信息表---------");
+            while(resultSet.next()){
+                String username=resultSet.getString("username");
+                String phone=resultSet.getString("phone");
+
+                System.out.println("用户名："+username);
+                System.out.println("电话："+phone);
+                System.out.println("-------------------------");
+            }
+            
+            resultSet.close();
+        }catch(SQLException e){
+            e.printStackTrace();
+        }
+    }
+
+    //删除客户信息
+    public void deleteConsumer(){
+       System.out.print("请输入要删除信息的用户名：");
+       String name=scanner.next();
+        try {
+            if (!userExists(name)) {
+                System.out.println("用户不存在!");
+                return;
+            }
+        String deletequery="DELETE FROM users WHERE username = ?";
+        PreparedStatement preparedStatement = connection.prepareStatement(deletequery);
+        preparedStatement.setString(1, name);
+        preparedStatement.executeUpdate();
+
+        System.out.println("用户信息删除成功！");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //查询客户信息
+    public void checkConsumer(){
+        System.out.print("请输入要查询的用户名：");
+        String username=scanner.next();
+
+        String sql= "SELECT * FROM users WHERE username = ?";
+            try (Connection connection = DriverManager.getConnection(DB_URL);
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+    
+                statement.setString(1, username);
+                ResultSet resultSet = statement.executeQuery();
+    
+                if (resultSet.next()) {
+                    String name = resultSet.getString("username");
+                    String phone = resultSet.getString("phone");
+    
+                    System.out.println("\n-------------------------");
+                    System.out.println("用户名：" +name);
+                    System.out.println("电话：" + phone);
+                    System.out.println("------------------------" );
+                } else {
+                    System.out.println("未找到客户：" + username);
+                }
+                
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
     }
 
 
@@ -83,6 +154,6 @@ public class User{
     public void resetPassword(){
         
     }
-
-
 }
+
+

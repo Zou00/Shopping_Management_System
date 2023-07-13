@@ -11,8 +11,6 @@ import java.sql.SQLException;
 
 public class Admin{
     private static final String DB_URL = "jdbc:sqlite:Admin.db";
-    private static final String DB_USER = "";
-    private static final String DB_PASSWORD = "";
 
     private Connection connection;
     private Statement statement;
@@ -20,7 +18,7 @@ public class Admin{
 
     public Admin(){
         try {
-            connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+            connection = DriverManager.getConnection(DB_URL);
             statement = connection.createStatement();
             scanner = new Scanner(System.in);
         } catch (SQLException e) {
@@ -88,27 +86,4 @@ public class Admin{
             }
         }
     }
-
-    
-
-
-
-    //列出所有客户信息
-    public void listCustomers(){
-
-    }
-
-    //删除客户信息
-    public void deleteConsumer(String deleteUsername){
-
-    }
-
-    //查询客户信息
-    public void checkConsumer(String checkUserName){
-
-    }
-
-    
-
-
 }

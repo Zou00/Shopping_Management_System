@@ -15,13 +15,14 @@ public class userDatabaseInitializer{
             String createTableQuery = "CREATE TABLE IF NOT EXISTS users (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "username TEXT NOT NULL," +
-                    "password TEXT NOT NULL" +
+                    "password TEXT NOT NULL," +
+                    "phone TEXT NOT NULL"+
                     ")";
             statement.executeUpdate(createTableQuery);
 
-            String insertDataQuery = "INSERT INTO users (username, password) VALUES " +
-                    "('user1', 'password1')," +
-                    "('user2', 'password2')";
+            String insertDataQuery = "INSERT INTO users (username, password, phone) VALUES " +
+                    "('user1', 'password1','18996891999')," +
+                    "('user2', 'password2','15387991123')";
             statement.executeUpdate(insertDataQuery);
 
             System.out.println("用户数据库初始化成功!");

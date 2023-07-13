@@ -123,17 +123,13 @@ public class Main{
 
             switch (num){
                 case 1:
-                    admin.listCustomers();
+                    user.listCustomers();
                     break;
                 case 2:
-                    System.out.print("请输入要删除客户的用户名：");
-                    String deleteUsername=scanner.next();
-                    admin.deleteConsumer(deleteUsername);
+                    user.deleteConsumer();
                     break;
                 case 3:
-                    System.out.print("请输入要查询客户的用户名：");
-                    String checkUsername=scanner.next();
-                    admin.checkConsumer(checkUsername);
+                    user.checkConsumer();
                     break;
                 case 0:
                     exit=false;
