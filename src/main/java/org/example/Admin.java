@@ -29,7 +29,7 @@ public class Admin{
    
     //管理员登录
     public void login(){
-        System.out.println("\n=========管理员登录=========");
+        System.out.println("\n---------管理员登录---------");
         System.out.print("用户名：");
         String adminname = scanner.next();
         System.out.print("密码：");
@@ -59,6 +59,7 @@ public class Admin{
 
     //管理员修改自身密码
     public void changePassword(){
+        System.out.println("\n---------修改密码---------");
         boolean exit=true;
         while(exit){
             System.out.print("请输入新密码：");

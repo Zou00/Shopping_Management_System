@@ -17,6 +17,9 @@ public class Main{
         userDatabaseInitializer databaseInitializer2 = new userDatabaseInitializer();
         databaseInitializer2.userInitializeDatabase();
 
+        DatabaseInitializer databaseInitializer3 = new DatabaseInitializer();
+        databaseInitializer3.main();
+
         boolean exit=true;
         while(exit){
             System.out.println("\n-----欢迎进入购物管理系统-----");
@@ -36,9 +39,9 @@ public class Main{
                     Consumer();
                     break;
                 case 0:
-                    System.out.print("是否确认退出购物管理系统（T）：");
+                    System.out.print("是否确认退出购物管理系统（t）：");
                     String s=scanner.next();
-                    if(s.equals("T")){
+                    if(s.equals("t")){
                         System.out.println("您已成功退出购物管理系统!");
                         exit=false;
                     }
@@ -159,28 +162,16 @@ public class Main{
                     product.listProducts();
                     break;
                 case 2:
-                    System.out.print("请输入要添加商品的名称：");
-                    String productName=scanner.next();
-                    System.out.print("请输入要添加商品的价格：");
-                    double productPrice=scanner.nextDouble();
-                    product.addProduct(productName,productPrice);
+                    product.addProduct();
                     break;
                 case 3:
-                    System.out.print("请输入要修改的商品名：");
-                    String modifyName=scanner.next();
-                    System.out.print("请输入新的价格：");
-                    double modifyPrice=scanner.nextDouble();
-                    product.modifyProduct(modifyName,modifyPrice);
+                    product.modifyProduct();
                     break;
                 case 4:
-                    System.out.print("请输入要删除的商品名：");
-                    String deletName=scanner.next();
-                    product.deleteProduct(deletName);
+                    product.deleteProduct();
                     break;
                 case 5:
-                    System.out.print("请输入要查询的商品名：");
-                    String checkName=scanner.next();
-                    product.checkProduct(checkName);
+                    product.checkProduct();
                     break;
                 case 0:
                     exit=false;
@@ -192,43 +183,33 @@ public class Main{
     }
 
     private static void Consumer(){
-        System.out.print("用户注册1，用户登录2：");
-        int n=scanner.nextInt();
-        if(n==1){
-            System.out.println("\n=========用户注册=========");
-            System.out.print("请输入用户名：");
-            String Name=scanner.next();
-            System.out.print("请设置密码：");
-            String Password=scanner.next();
-
-            if(user.register(Name,Password)){
-                System.out.println("用户注册成功！");
-                userMenu();
+        boolean exit=true;
+        while(exit){
+            System.out.println("\n==========用户========");
+            System.out.println("|------1.注册------|");
+            System.out.println("|------2.登录------|");
+            System.out.println("|------3.忘记密码--|");
+            System.out.print("请输入操作的编号：");
+            int n=scanner.nextInt();
+            scanner.nextLine();
+        
+            switch(n){
+                case 1:
+                    user.register();
+                    break;
+                case 2:
+                    user.login();
+                    break;
+                case 3:
+                    user.resetPassword();
+                    break;
+                default:
+                    System.out.print("请输入正确的编号!");
             }
-            else{
-                System.out.print("用户名已存在，请重新输入！");
-            }
-        }
-        else if(n==2){
-            System.out.println("\n=========用户登录=========");
-            System.out.print("请输入用户名：");
-            String userName=scanner.next();
-            System.out.print("请输入密码：");
-            String userPassword=scanner.next();
-
-            if(user.login(userName,userPassword)){
-                userMenu();
-            }
-            else{
-                System.out.println("用户名或密码错误！");
-            }
-        }
-        else{
-            System.out.print("请重新输入正确的编号：");
         }
     }
 
-    private static void userMenu(){
+    public static void userMenu(){
         boolean exit=true;
         while(exit){
             System.out.println("\n=========用户菜单=========");
@@ -260,8 +241,7 @@ public class Main{
         boolean exit=true;
         while(exit){
             System.out.println("\n=========密码管理=========");
-            System.out.println("|======1.修改密码========|");
-            System.out.println("|======2.重置密码========|");
+            System.out.println("|======1.修改密码=========|");
             System.out.println("|======0.返回上一级菜单===|");
             System.out.print("请输入操作的编号：");
             int num=scanner.nextInt();
@@ -269,18 +249,7 @@ public class Main{
 
             switch(num){
                 case 1:
-                    System.out.print("请输入新密码：");
-                    String s1=scanner.next();
-                    System.out.print("请再次输入新密码：");
-                    String s2=scanner.next();
-                    if(s1.equals(s2)){
-                        user.changePassword(s2);
-                        System.out.println("密码修改成功！");
-                    }
-                    break;
-                case 2:
-                    user.resetPassword();
-                    System.out.println("密码重置成功！");
+                    user.changePassword();
                     break;
                 case 0:
                     exit=false;
@@ -290,15 +259,18 @@ public class Main{
             }
         }
     }
+
     private static void shopping(){
         boolean exit=true;
         while(exit){
             System.out.println("\n===============购物================");
-            System.out.println("|======1.将商品加入购物车==========|");
-            System.out.println("|======2.从购物车中移除商品========|");
-            System.out.println("|======3.修改购物车中的商品========|");
-            System.out.println("|======4.模拟结账=================|");
-            System.out.println("|======5.查看购物历史=============|");
+            System.out.println("|======1.查看商品==========|");
+            System.out.println("|======2.将商品加入购物车==========|");
+            System.out.println("|======3.从购物车中移除商品========|");
+            System.out.println("|======4.修改购物车中的商品========|");
+            System.out.println("|======5.查看购物车==========|");
+            System.out.println("|======6.模拟结账=================|");
+            System.out.println("|======7.查看购物历史=============|");
             System.out.println("|======0.返回上一级菜单===========|");
             System.out.print("请输入操作的编号：");
             int num=scanner.nextInt();
@@ -306,30 +278,31 @@ public class Main{
 
             switch(num){
                 case 1:
-                    System.out.print("请输入要加入购物车的商品名：");
-                    String addName=scanner.next();
-                    System.out.print("请输入要加入商品的数量：");
-                    int n=scanner.nextInt();
-                    cart.addToCart(addName,n);
+                    product.listProducts();
                     break;
                 case 2:
-                    System.out.print("请输入要移除的商品名：");
-                    String removeName=scanner.next();
-                    cart.removeFromCart(removeName);
+                    System.out.println("\n--------添加商品至购物车--------");
+                    System.out.print("请输入要加入购物车的商品名：");
+                    String addName=scanner.next();
+                    product.addToCart(addName);
+                    cart.addToCart(addName);
                     break;
                 case 3:
-                    System.out.print("请输入要修改的商品名");
-                    String modifyName=scanner.next();
-                    System.out.print("请输入新的数量：");
-                    int q=scanner.nextInt();
-                    cart.modifyCart(modifyName,q);
+                    cart.removeFromCart();
                     break;
                 case 4:
-                    cart.checkout();
+                    cart.modifyCart();
                     break;
                 case 5:
+                    cart.list();
+                    break;
+                case 6:
+                    cart.checkout();
+                    break;
+                case 7:
                     cart.shoppingHistory();
                     break;
+                
                 case 0:
                     exit=false;
                     break;
@@ -338,5 +311,4 @@ public class Main{
             }
         }
     }
-    
 }    
