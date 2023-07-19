@@ -172,14 +172,15 @@ public class Product{
     }
 
     //商品加入购物车(判断是否存在该商品)
-    public void addToCart(String addName){
+    public boolean addToCart(String addName){
         try{
             if (!productExists(addName)) {
                 System.out.println("商品不存在，无法加入购物车!");
-                return;
+                return false;
             }
         }catch (SQLException e) {
             e.printStackTrace();
         }
+        return true;
     }
 }

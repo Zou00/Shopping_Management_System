@@ -185,10 +185,11 @@ public class Main{
     private static void Consumer(){
         boolean exit=true;
         while(exit){
-            System.out.println("\n==========用户========");
-            System.out.println("|------1.注册------|");
-            System.out.println("|------2.登录------|");
-            System.out.println("|------3.忘记密码--|");
+            System.out.println("\n============用户==========");
+            System.out.println("|------1.注册-------------|");
+            System.out.println("|------2.登录-------------|");
+            System.out.println("|------3.忘记密码---------|");
+            System.out.println("|------0.返回上一级菜单----|");
             System.out.print("请输入操作的编号：");
             int n=scanner.nextInt();
             scanner.nextLine();
@@ -203,8 +204,11 @@ public class Main{
                 case 3:
                     user.resetPassword();
                     break;
+                case 0:
+                    exit=false;
+                    break;
                 default:
-                    System.out.print("请输入正确的编号!");
+                    System.out.println("请输入正确的编号!");
             }
         }
     }
@@ -264,11 +268,11 @@ public class Main{
         boolean exit=true;
         while(exit){
             System.out.println("\n===============购物================");
-            System.out.println("|======1.查看商品==========|");
+            System.out.println("|======1.查看商品=================|");
             System.out.println("|======2.将商品加入购物车==========|");
             System.out.println("|======3.从购物车中移除商品========|");
             System.out.println("|======4.修改购物车中的商品========|");
-            System.out.println("|======5.查看购物车==========|");
+            System.out.println("|======5.查看购物车===============|");
             System.out.println("|======6.模拟结账=================|");
             System.out.println("|======7.查看购物历史=============|");
             System.out.println("|======0.返回上一级菜单===========|");
@@ -284,8 +288,9 @@ public class Main{
                     System.out.println("\n--------添加商品至购物车--------");
                     System.out.print("请输入要加入购物车的商品名：");
                     String addName=scanner.next();
-                    product.addToCart(addName);
-                    cart.addToCart(addName);
+                    if(product.addToCart(addName)){
+                        cart.addToCart(addName);
+                    }
                     break;
                 case 3:
                     cart.removeFromCart();
@@ -302,7 +307,6 @@ public class Main{
                 case 7:
                     cart.shoppingHistory();
                     break;
-                
                 case 0:
                     exit=false;
                     break;

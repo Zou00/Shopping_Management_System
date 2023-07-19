@@ -129,45 +129,8 @@ public class Cart{
     //模拟结账
     public void checkout(){
         try (Connection connection = DriverManager.getConnection(DB_URL)) {
-        while (true) {
-            // 获取购物车信息
-            String query = "SELECT * FROM cart";
-            try (Statement statement = connection.createStatement();
-                 ResultSet resultSet = statement.executeQuery(query)) {
-                System.out.println("--------------------");
-                System.out.println("当前购物车：");
-                while (resultSet.next()) {
-                    String productname = resultSet.getString("productname");
-                    int number = resultSet.getInt("number");
-                    System.out.println(productname + " ——— 数量：" + number);
-                }
-                System.out.println("--------------------");
-
-                // 打印菜单
-                System.out.println("请选择要购买的商品：");
-                System.out.println("END. 结束购买并结算");
-
-                // 获取用户选择
-                String choice = scanner.next();
-
-                // 结束购买并结算
-                if (choice.equals("END")) {
-                    break;
-                }
-                // 添加商品到购物车
-                System.out.println("请输入购买的数量：");
-                int num = scanner.nextInt();
-                addCartItem(connection, choice, num);
-                decreaseproduct(connection, choice, num);
-                savePurchaseHistory(connection, choice,num);
-                System.out.println("已添加到账单！");
-            }
-        }
-
-        // 计算总金额
         double total = calculateTotalPrice(connection);
 
-        // 打印结算信息
         System.out.println("--------------------");
         System.out.println("购物清单：");
         String query = "SELECT * FROM cart";
@@ -177,126 +140,93 @@ public class Cart{
                 String productname = resultSet.getString("productname");
                 int number = resultSet.getInt("number");
                 System.out.println(productname + " —— 数量：" + number + " —— 小计：" + (getPrice(connection, productname) * number));
+                decreaseproduct(connection, productname, number);
+                savePurchaseHistory(connection,productname,number);
             }
         }
         System.out.println("--------------------");
         System.out.println("总金额：￥" + total);
 
-        // 清空购物车
         clearCart(connection);
-        
 
     } catch (SQLException e) {
         e.printStackTrace();
     }
-    scanner.close();
 }
 
-public static void addCartItem(Connection connection, String productname, int number) throws SQLException {
-    String query = "SELECT * FROM cart WHERE productname= ?";
-    try (PreparedStatement statement = connection.prepareStatement(query)) {
-        statement.setString(1, productname);
-        ResultSet resultSet = statement.executeQuery();
-        if (resultSet.next()) {
-            int existingNumber = resultSet.getInt("number");
-            number += existingNumber;
-            updateCartItem(connection, productname, number);
-        } else {
-            String insert = "INSERT INTO cart(productname, number) VALUES (?, ?)";
-            try (PreparedStatement insertStatement = connection.prepareStatement(insert)) {
-                insertStatement.setString(1, productname);
-                insertStatement.setInt(2, number);
-                insertStatement.executeUpdate();
+    public static double calculateTotalPrice(Connection connection) throws SQLException {
+        double total = 0.0;
+        String query = "SELECT * FROM cart";
+        try (Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(query)) {
+            while (resultSet.next()) {
+                String productname = resultSet.getString("productname");
+                int number = resultSet.getInt("number");
+                double price = getPrice(connection, productname);
+                total += (price * number);
             }
         }
-        resultSet.close();
+        return total;
     }
-}
 
-public static void updateCartItem(Connection connection, String productname, int number) throws SQLException {
-    String query = "UPDATE cart SET number = ? WHERE productname = ?";
-    try (PreparedStatement statement = connection.prepareStatement(query)) {
-        statement.setString(1, productname);
-        statement.setInt(2, number);
-        statement.executeUpdate();
+    public static double getPrice(Connection connection, String productname) throws SQLException {
+        String query = "SELECT price FROM products WHERE productname = ?";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, productname);
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                return resultSet.getDouble("price");
+            }
+        }
+        return 0.0;
     }
-}
 
-public static double calculateTotalPrice(Connection connection) throws SQLException {
-    double total = 0.0;
-    String query = "SELECT * FROM cart";
-    try (Statement statement = connection.createStatement();
-         ResultSet resultSet = statement.executeQuery(query)) {
-        while (resultSet.next()) {
-            String productname = resultSet.getString("productname");
-            int number = resultSet.getInt("number");
-            double price = getPrice(connection, productname);
-            total += (price * number);
+    public static void clearCart(Connection connection) throws SQLException {
+        String query = "DELETE FROM cart";
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate(query);
         }
     }
-    return total;
-}
 
-public static double getPrice(Connection connection, String productname) throws SQLException {
-    String query = "SELECT price FROM products WHERE productname = ?";
-    try (PreparedStatement statement = connection.prepareStatement(query)) {
-        statement.setString(1, productname);
-        ResultSet resultSet = statement.executeQuery();
-        if (resultSet.next()) {
-            return resultSet.getDouble("price");
+    public static void decreaseproduct(Connection connection, String productname, int number) throws SQLException {
+        String updateQuery = "UPDATE products SET number = number - ? WHERE productname = ?";
+        try (PreparedStatement statement = connection.prepareStatement(updateQuery)) {
+            statement.setInt(1, number);
+            statement.setString(2, productname);
+            statement.executeUpdate();
         }
     }
-    return 0.0;
-}
 
-public static void clearCart(Connection connection) throws SQLException {
-    String query = "DELETE FROM shopping_cart";
-    try (Statement statement = connection.createStatement()) {
-        statement.executeUpdate(query);
-    }
-}
+    public void shoppingHistory() {
+        try(Connection connection = DriverManager.getConnection(DB_URL)) {
+            displayPurchaseHistory(connection);
 
-public static void decreaseproduct(Connection connection, String productname, int number) throws SQLException {
-    String updateQuery = "UPDATE products SET number = number - ? WHERE productname = ?";
-    try (PreparedStatement statement = connection.prepareStatement(updateQuery)) {
-        statement.setInt(1, number);
-        statement.setString(2, productname);
-        statement.executeUpdate();
-    }
-}
-
-
-public static void shoppingHistory() {
-    try(Connection connection = DriverManager.getConnection(DB_URL)) {
-        displayPurchaseHistory(connection);
-
-    } catch (SQLException e) {
-        e.printStackTrace();
-    }
-}
-
-public static void savePurchaseHistory(Connection connection, String productname, int number) throws SQLException {
-    String insertQuery = "INSERT INTO history (productname, number) VALUES (?, ?)";
-    try (PreparedStatement statement = connection.prepareStatement(insertQuery)) {
-        statement.setString(1, productname);
-        statement.setInt(2, number);
-        statement.executeUpdate();
-    }
-}
-
-public static void displayPurchaseHistory(Connection connection) throws SQLException {
-    String query = "SELECT * FROM history";
-    try (Statement statement = connection.createStatement();
-         ResultSet resultSet = statement.executeQuery(query)) {
-
-        while (resultSet.next()) {
-            String productname = resultSet.getString("productname");
-            int number = resultSet.getInt("number");
-
-            System.out.println("商品名: " + productname + ", 数量: " + number);
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
-}
 
+    public static void savePurchaseHistory(Connection connection, String productname, int number) throws SQLException {
+        String insertQuery = "INSERT INTO shoppinghistory (productname, number) VALUES (?, ?)";
+        try (PreparedStatement statement = connection.prepareStatement(insertQuery)) {
+            statement.setString(1, productname);
+            statement.setInt(2, number);
+            statement.executeUpdate();
+        }
+    }
 
+    public static void displayPurchaseHistory(Connection connection) throws SQLException {
+        String query = "SELECT * FROM shoppinghistory";
+        try (Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(query)) {
+            System.out.println("--------购物历史--------");
+            System.out.println("商品     数量");
+            while (resultSet.next()) {
+                String productname = resultSet.getString("productname");
+                int number = resultSet.getInt("number");
+                System.out.println(productname + "      " + number);
+            }
+            System.out.println("------------------------");
+        }
+    }
 }
