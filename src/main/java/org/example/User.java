@@ -1,281 +1,238 @@
 package org.example;
 
-import java.sql.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.security.SecureRandom;
+import java.util.Random;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-public class User{
-    private static final String DB_URL = "jdbc:sqlite:User.db";
-
-    private Connection connection;
-    private Statement statement;
-    private Scanner scanner;
-
-    public User(){
-        try {
-            connection = DriverManager.getConnection(DB_URL);
-            statement = connection.createStatement();
-            scanner = new Scanner(System.in);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-    
-    //管理员重置用户密码
-    public void resetUserPassword(){
-        System.out.println("\n---------重置用户密码---------");
-        System.out.print("请输入要重置密码的用户名：");
-        String username=scanner.next();
-        try {
-            if (!userExists(username)) {
-                System.out.println("用户不存在!");
-                return;
+public class User {
+    Scanner scanner = new Scanner(System.in);
+    //注册
+    public void register() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("请输入用户名(不少于5个字符)：");
+        String username = scanner.nextLine();
+        while (username.length() < 5) {
+            System.out.print("用户名长度不能少于5个字符，请重新输入：");
+            username = scanner.nextLine();
             }
-        
-        System.out.print("请重置密码：");
-        String password=scanner.next();
 
-        String updateQuery = "UPDATE users SET password = ? WHERE username = ?";
-        PreparedStatement preparedStatement = connection.prepareStatement(updateQuery);
-        preparedStatement.setString(1, password);
-        preparedStatement.setString(2,username);
-        preparedStatement.executeUpdate();
-
-        System.out.println("用户密码重置成功!");
-
-        preparedStatement.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    //查找用户是否存在
-    private boolean userExists(String username) throws SQLException {
-        String query = "SELECT * FROM users WHERE username = ?";
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setString(1, username);
-        ResultSet resultSet = preparedStatement.executeQuery();
-        boolean exists = resultSet.next();
-        preparedStatement.close();
-        return exists;
-    }
-
-    //列出所有客户信息
-    public void listCustomers(){
-        String query="SELECT username,phone FROM users";
-        try{
-            ResultSet resultSet=statement.executeQuery(query);
-            System.out.println("\n--------客户信息表---------");
-            while(resultSet.next()){
-                String username=resultSet.getString("username");
-                String phone=resultSet.getString("phone");
-
-                System.out.println("用户名："+username);
-                System.out.println("电话："+phone);
-                System.out.println("-------------------------");
-            }
-            
-            resultSet.close();
-        }catch(SQLException e){
-            e.printStackTrace();
-        }
-    }
-
-    //删除客户信息
-    public void deleteConsumer(){
-       System.out.print("请输入要删除信息的用户名：");
-       String name=scanner.next();
-        try {
-            if (!userExists(name)) {
-                System.out.println("用户不存在!");
-                return;
-            }
-        String deletequery="DELETE FROM users WHERE username = ?";
-        PreparedStatement preparedStatement = connection.prepareStatement(deletequery);
-        preparedStatement.setString(1, name);
-        preparedStatement.executeUpdate();
-
-        System.out.println("用户信息删除成功！");
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    //查询客户信息
-    public void checkConsumer(){
-        System.out.print("请输入要查询的用户名：");
-        String username=scanner.next();
-
-        String query= "SELECT * FROM users WHERE username = ?";
-            try (Connection connection = DriverManager.getConnection(DB_URL);
-                 PreparedStatement statement = connection.prepareStatement(query)) {
-    
-                statement.setString(1, username);
-                ResultSet resultSet = statement.executeQuery();
-    
-                if (resultSet.next()) {
-                    String name = resultSet.getString("username");
-                    String phone = resultSet.getString("phone");
-    
-                    System.out.println("\n-------------------------");
-                    System.out.println("用户名：" +name);
-                    System.out.println("电话：" + phone);
-                    System.out.println("------------------------" );
-                } else {
-                    System.out.println("未找到客户：" + username);
-                }
-                
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-    }
-
-
-    //用户注册
-    public void register(){
-        System.out.println("\n---------用户注册---------");
-            System.out.print("请设置用户名：");
-            String name=scanner.next();
             System.out.print("请设置密码：");
-            String password=scanner.next();
-            System.out.print("请输入电话号码：");
-            String phone=scanner.next();
-        
-        try{
-            if (userExists(name)) {
-                System.out.println("用户名已存在!");
-                return;
+            String password1 = scanner.nextLine();
+            while (password1.length() <= 8 || !isPasswordValid(password1)) {
+                System.out.println("密码长度必须大于8个字符，并且必须是大小写字母、数字和标点符号的组合，请重新输入：");
+                password1 = scanner.nextLine();
             }
+        // 获取当前时间作为注册时间
+        LocalDateTime registrationDateTime = LocalDateTime.now();
 
-            String query = "INSERT INTO users (username, password, phone) VALUES (?,?,?)";
-            PreparedStatement preparedStatement=connection.prepareStatement(query);
-            preparedStatement.setString(1,name);
-            preparedStatement.setString(2,password);
-            preparedStatement.setString(3,phone);
-            preparedStatement.executeUpdate();
+        String userID=generateRandomId();
+        String userLevel="铜牌客户";
+        double consumption=0.0;
 
+        System.out.print("请输入手机号：");
+        String phonenumber=scanner.nextLine();
+        System.out.print("请输入邮箱：");
+        String email=scanner.nextLine();
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("D:\\Programming\\ShoppingSystem\\listUsers.txt", true))) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss");
+            String formattedDateTime = registrationDateTime.format(formatter);
+
+            writer.write(userID+" "+username + " " + password1 + " "+userLevel+" "+ formattedDateTime+" "+consumption+" "+phonenumber+" "+email);
+
+            writer.newLine();
             System.out.println("注册成功！");
-            Main.userMenu();
-
-        }catch(SQLException e){
-            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.println("保存用户信息时出错：" + e.getMessage());
         }
     }
 
-    //用户登录
-    public void login(){
-        System.out.println("\n---------用户登录---------");
-        System.out.print("用户名：");
-        String username = scanner.next();
-        System.out.print("密码：");
-        String password = scanner.next();
-    
-        // 查询数据库验证用户名和密码
-        String query = "SELECT * FROM users WHERE username = ? AND password = ?";
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, username);
-            preparedStatement.setString(2, password);
-            ResultSet resultSet = preparedStatement.executeQuery();
-    
-            if (resultSet.next()) {
-                System.out.println("登录成功!");
-                Main.userMenu();
-            } else {
-                System.out.println("用户名或密码错误！");
-            }
-    
-            resultSet.close();
-            preparedStatement.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
+    //判断密码是否长度大于8个字符，并且是大小写字母、数字和标点符号的组合
+    public static boolean isPasswordValid(String password) {
+        if (password.length() < 8) {
+            return false;
         }
+
+        boolean hasUppercase = false;
+        boolean hasLowercase = false;
+        boolean hasNumber = false;
+
+        for (char ch : password.toCharArray()) {
+            if (Character.isUpperCase(ch)) {
+                hasUppercase = true;
+            } else if (Character.isLowerCase(ch)) {
+                hasLowercase = true;
+            } else if (Character.isDigit(ch)) {
+                hasNumber = true;
+            }
+
+            if (hasUppercase && hasLowercase && hasNumber) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    //生成随机5位编号
+    private String generateRandomId() {
+        Set<String> usedIds = new HashSet<>();
+        Random random = new Random();
+        StringBuilder builder = new StringBuilder();
+
+        while (true) {
+            for (int i = 0; i < 5; i++) {
+                int digit = random.nextInt(10);
+                builder.append(digit);
+            }
+
+            String randomId = builder.toString();
+            if (!usedIds.contains(randomId)) {
+                usedIds.add(randomId);
+                return randomId;
+            }
+
+            builder.setLength(0); // 清空 StringBuilder
+            if (usedIds.size() >= 10000) {
+                throw new RuntimeException("无法生成唯一的随机编号！");
+            }
+        }
+    }
+
+    //登录
+    public  void userLogin(){
+        System.out.print("请输入用户名：");
+        String userName=scanner.next();
+        System.out.print("请输入密码：");
+        String userPassword=scanner.next();
+
+        if (iflogin(userName, userPassword)) {
+            System.out.println("登录成功！");
+            Main.userMenu();
+        } else {
+            System.out.println("登录失败！账户已锁定！");
+        }
+    }
+
+    //判断密码输入超过五次
+    private static boolean iflogin(String username, String password) {
+        try (BufferedReader reader = new BufferedReader(new FileReader("D:\\Programming\\ShoppingSystem\\listUsers.txt"))) {
+            String line;
+            int attempts = 0;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(" ");
+                String storedUsername = parts[1];
+                String storedPassword = parts[2];
+
+                if (storedUsername.equals(username)) {
+                    if (storedPassword.equals(password)) {
+                        return true; // 登录成功
+                    } else {
+                        attempts++;
+                        if (attempts >= 5) {
+                            return false; // 账户已锁定
+                        }
+                        System.out.println("密码错误！请重新输入。");
+                    }
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("读取用户登录文件时出错：" + e.getMessage());
+        }
+        return false; // 用户名不存在
     }
 
     //修改密码
-    public void changePassword(){
-        System.out.println("\n---------修改密码---------");
-        System.out.print("请输入用户名：");
-        String username=scanner.next();
-        boolean exit=true;
-        while(exit){
-            System.out.print("请输入新密码：");
-            String s1=scanner.next();
-            System.out.print("请再次输入新密码：");
-            String s2=scanner.next();
-
-            // 更新密码到数据库
-            if(s1.equals(s2)){
-                String updateQuery = "UPDATE users SET password = ? WHERE username = ?";
-                try {
-                    PreparedStatement preparedStatement = connection.prepareStatement(updateQuery);
-                    preparedStatement.setString(1, s2);
-                    preparedStatement.setString(2,username);
-                    preparedStatement.executeUpdate();
-
-                    preparedStatement.close();
-                    System.out.println("密码修改成功！");
-                } catch (SQLException e) {
-                    e.printStackTrace();
+    public void changePassword(String password){
+        List<String> lines = new ArrayList<>();
+        scanner.nextLine();
+        try (BufferedReader reader = new BufferedReader(new FileReader("D:\\Programming\\ShoppingSystem\\listUsers.txt"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] userInfo = line.split(" ");
+                String passWord = userInfo[2];
+                if (password.equals(passWord)) {
+                    System.out.print("请输入新密码: ");
+                    String newpassword = scanner.next();
+                    while (newpassword.length() <= 8 || !isPasswordValid(newpassword)) {
+                        System.out.println("密码长度必须大于8个字符，并且必须是大小写字母、数字和标点符号的组合，请重新输入：");
+                        newpassword = scanner.nextLine();
+                    }
+                    userInfo[2] = newpassword;
+                    line = String.join(" ", userInfo);
+                    System.out.println("成功修改密码！");
                 }
-                exit=false;
+                lines.add(line);
             }
-            else{
-                System.out.println("两次密码输入不一致，请重新输入！");
+        } catch (IOException e) {
+            System.out.println("读取用户信息时出错：" + e.getMessage());
+            return;
+        }
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("D:\\Programming\\ShoppingSystem\\listUsers.txt"))) {
+            for (String line : lines) {
+                writer.write(line);
+                writer.newLine();
             }
+        } catch (IOException e) {
+            System.out.println("保存用户信息时出错：" + e.getMessage());
         }
     }
 
     //重置密码
-    public void resetPassword(){
-        System.out.println("---------重置密码---------");
-        System.out.print("用户名：");
-        String username=scanner.next();
-        System.out.print("电话：");
-        int phone=scanner.nextInt();
-        try {
-            if (!userExists(username)) {
-                System.out.println("用户不存在!");
-                return;
+    public void resetPassword(String username,String email){
+        List<String> lines=new ArrayList<>();
+        scanner.nextLine();
+        try (BufferedReader reader = new BufferedReader(new FileReader("D:\\Programming\\ShoppingSystem\\listUsers.txt"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] userInfo = line.split(" ");
+                String userName = userInfo[1];
+                String Email=userInfo[7];
+                if (username.equals(userName) && email.equals(Email)) {
+                    String newpassword =generateRandomPassword(8) ;
+                    userInfo[2] = newpassword;
+                    line = String.join(" ", userInfo);
+                    System.out.println("密码修改成功！已发送新密码至邮箱:"+email);
+                }
+                lines.add(line);
             }
-            if(!phoneMatch(username, phone)){
-                System.out.println("输入的电话有误！");
-                return;
+        } catch (IOException e) {
+            System.out.println("读取用户信息时出错：" + e.getMessage());
+            return;
+        }
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("D:\\Programming\\ShoppingSystem\\listUsers.txt"))) {
+            for (String line : lines) {
+                writer.write(line);
+                writer.newLine();
             }
-        
-        System.out.print("请重置密码：");
-        String password=scanner.next();
-
-        String updateQuery = "UPDATE users SET password = ? WHERE username = ?";
-        PreparedStatement preparedStatement = connection.prepareStatement(updateQuery);
-        preparedStatement.setString(1, password);
-        preparedStatement.setString(2,username);
-        preparedStatement.executeUpdate();
-
-        System.out.println("密码重置成功!");
-
-        preparedStatement.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.println("保存用户信息时出错：" + e.getMessage());
         }
     }
 
-    //判断电话号码是否匹配
-    private boolean phoneMatch(String username,int phone) throws SQLException {
-        String query = "SELECT * FROM users WHERE username = ? AND phone = ?";
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setString(1, username);
-        preparedStatement.setInt(2, phone);
-        ResultSet resultSet = preparedStatement.executeQuery();
-        boolean match = resultSet.next();
-        preparedStatement.close();
-        return match;
+    //生成随机8位密码
+    private static String generateRandomPassword(int length) {
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+{}:\"<>?,./;'[]\\|";
+        Random random = new SecureRandom();
+        StringBuilder password = new StringBuilder();
+        while (password.length() < length) {
+            int index = random.nextInt(characters.length());
+            char character = characters.charAt(index);
+            password.append(character);
+        }
+        return password.toString();
     }
 }
 

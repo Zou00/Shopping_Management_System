@@ -8,21 +8,12 @@ public class Main{
     private static User user=new User();
     private static Product product=new Product();
     private static Cart cart=new Cart();
-    
+    private static Pay pay=new Pay();
+
     public static void main(String[] args){
-
-        adminDatabaseInitializer databaseInitializer1 = new adminDatabaseInitializer();
-        databaseInitializer1.adminInitializeDatabase();
-
-        userDatabaseInitializer databaseInitializer2 = new userDatabaseInitializer();
-        databaseInitializer2.userInitializeDatabase();
-
-        DatabaseInitializer databaseInitializer3 = new DatabaseInitializer();
-        databaseInitializer3.main();
-
         boolean exit=true;
         while(exit){
-            System.out.println("\n-----欢迎进入购物管理系统-----");
+            System.out.println("\n欢迎进入购物管理系统");
             System.out.println("\n==========身份选择==========");
             System.out.println("|=========1.管理员=========|");
             System.out.println("|=========2.用户 ==========|");
@@ -33,27 +24,40 @@ public class Main{
 
             switch(num){
                 case 1:
-                    admin.login();
+                    adminLogin();
                     break;
                 case 2:
                     Consumer();
                     break;
                 case 0:
-                    System.out.print("是否确认退出购物管理系统（t）：");
+                    System.out.print("是否确认退出购物管理系统（1）：");
                     String s=scanner.next();
-                    if(s.equals("t")){
+                    if(s.equals("1")){
                         System.out.println("您已成功退出购物管理系统!");
                         exit=false;
                     }
                     break;
                 default:
-                    System.out.println("请输入正确的编号!");
+                    System.out.print("请重新输入正确的编号：");
             }
         }
-        System.out.println("感谢使用购物管理系统！");   
+        System.out.println("感谢使用购物管理系统！");
     }
 
-    public static void adminMenu(){    
+    private static void adminLogin(){
+        System.out.println("\n=========管理员登录=========");
+        System.out.print("请输入用户名：");
+        String userName=scanner.next();
+        System.out.print("请输入密码：");
+        String passWord=scanner.next();
+
+        if(admin.login(userName,passWord))
+            adminMenu();
+        else
+            System.out.println("用户名或密码错误！");
+    }
+
+    private static void adminMenu(){
         boolean exit=true;
         while(exit){
             System.out.println("\n==========管理员菜单========");
@@ -80,11 +84,11 @@ public class Main{
                     exit=false;
                     break;
                 default:
-                    System.out.println("请输入正确的编号!");
+                    System.out.print("请重新输入正确的编号：");
             }
         }
     }
-    
+
     private static void adminPasswordManagement(){
         boolean exit=true;
         while(exit){
@@ -101,13 +105,15 @@ public class Main{
                     admin.changePassword();
                     break;
                 case 2:
-                    user.resetUserPassword();
+                    System.out.print("请输入需要重置密码的ID：");
+                    String id=scanner.next();
+                    admin.resetUserPassword(id);
                     break;
                 case 0:
                     exit=false;
                     break;
                 default:
-                    System.out.println("请输入正确的编号!");
+                    System.out.print("请重新输入正确的编号：");
             }
         }
     }
@@ -126,19 +132,27 @@ public class Main{
 
             switch (num){
                 case 1:
-                    user.listCustomers();
+                    admin.listCustomers();
                     break;
                 case 2:
-                    user.deleteConsumer();
+                    System.out.print("请输入要删除客户的ID:");
+                    String userID=scanner.next();
+                    System.out.print("请输入要删除客户的用户名：");
+                    String deleteUsername=scanner.next();
+                    admin.deleteConsumer(userID,deleteUsername);
                     break;
                 case 3:
-                    user.checkConsumer();
+                    System.out.print("请输入要查询客户的用户名：");
+                    String checkname=scanner.nextLine();
+                    System.out.print("请输入要查询客户的ID：");
+                    String userid=scanner.next();
+                    admin.checkConsumer(checkname,userid);
                     break;
                 case 0:
                     exit=false;
                     break;
                 default:
-                    System.out.println("请输入正确的编号!");
+                    System.out.print("请重新输入正确的编号：");
             }
         }
     }
@@ -165,19 +179,27 @@ public class Main{
                     product.addProduct();
                     break;
                 case 3:
-                    product.modifyProduct();
+                    System.out.print("请输入要修改的商品编号：");
+                    String id=scanner.nextLine();
+                    product.modifyProduct(id);
                     break;
                 case 4:
-                    product.deleteProduct();
+                    System.out.print("请输入要删除的商品编号：");
+                    String productId=scanner.nextLine();
+                    product.deleteProduct(productId);
                     break;
                 case 5:
-                    product.checkProduct();
+                    System.out.print("请输入要查询商品的名称：");
+                    String checkname=scanner.nextLine();
+                    System.out.print("请输入要查询商品的ID：");
+                    String productid=scanner.nextLine();
+                    product.checkProduct(checkname,productid);
                     break;
                 case 0:
                     exit=false;
                     break;
                 default:
-                    System.out.println("请输入正确的编号!");
+                    System.out.print("请重新输入正确的编号：");
             }
         }
     }
@@ -193,16 +215,20 @@ public class Main{
             System.out.print("请输入操作的编号：");
             int n=scanner.nextInt();
             scanner.nextLine();
-        
+
             switch(n){
                 case 1:
                     user.register();
                     break;
                 case 2:
-                    user.login();
+                    user.userLogin();
                     break;
                 case 3:
-                    user.resetPassword();
+                    System.out.print("请输入需要重置密码的用户名：");
+                    String username=scanner.next();
+                    System.out.print("请输入注册时的邮箱：");
+                    String email=scanner.next();
+                    user.resetPassword(username,email);
                     break;
                 case 0:
                     exit=false;
@@ -236,7 +262,7 @@ public class Main{
                     exit=false;
                     break;
                 default:
-                    System.out.println("请输入正确的编号!");
+                    System.out.print("请重新输入正确的编号：");
             }
         }
     }
@@ -253,7 +279,9 @@ public class Main{
 
             switch(num){
                 case 1:
-                    user.changePassword();
+                    System.out.print("请输入原密码：");
+                    String password=scanner.next();
+                    user.changePassword(password);
                     break;
                 case 0:
                     exit=false;
@@ -282,30 +310,30 @@ public class Main{
 
             switch(num){
                 case 1:
-                    product.listProducts();
+                    cart.listProducts();
                     break;
                 case 2:
                     System.out.println("\n--------添加商品至购物车--------");
-                    System.out.print("请输入要加入购物车的商品名：");
-                    String addName=scanner.next();
-                    if(product.addToCart(addName)){
-                        cart.addToCart(addName);
-                    }
+                    cart.addToCart();
                     break;
                 case 3:
-                    cart.removeFromCart();
+                    System.out.print("请输入要删除的商品编号：");
+                    String productId=scanner.nextLine();
+                    cart.removeFromCart(productId);
                     break;
                 case 4:
-                    cart.modifyCart();
+                    System.out.print("请输入要修改的商品编号：");
+                    String Id=scanner.nextLine();
+                    cart.modifyCart(Id);
                     break;
                 case 5:
                     cart.list();
                     break;
                 case 6:
-                    cart.checkout();
+                    pay.simulatepay();
                     break;
                 case 7:
-                    cart.shoppingHistory();
+                    pay.History();
                     break;
                 case 0:
                     exit=false;
@@ -315,4 +343,4 @@ public class Main{
             }
         }
     }
-}    
+}

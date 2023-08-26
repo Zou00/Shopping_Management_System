@@ -1,186 +1,189 @@
 package org.example;
 
-import java.sql.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-public class Product{
-    private static final String DB_URL = "jdbc:sqlite:Data.db";
-
-    private Connection connection;
-    private Statement statement;
-    private Scanner scanner;
-
-    public Product(){
-        try {
-            connection = DriverManager.getConnection(DB_URL);
-            statement = connection.createStatement();
-            scanner = new Scanner(System.in);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+public class Product {
+    Scanner scanner = new Scanner(System.in);
 
     //列出所有商品信息
-    public void listProducts(){
-        String query="SELECT productname,price,number FROM products";
-        try{
-            ResultSet resultSet=statement.executeQuery(query);
-            System.out.println("\n--------商品信息表---------");
-            while(resultSet.next()){
-                String productname=resultSet.getString("productname");
-                String price=resultSet.getString("price");
-                String number=resultSet.getString("number");
+    public void listProducts() {
+        System.out.println("---------商品信息---------");
+        //商品编号、商品名称、生产厂家、生产日期、型号、进货价、零售价格、数量
+        try (BufferedReader reader = new BufferedReader(new FileReader("D:\\Programming\\ShoppingSystem\\products.txt"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] userInfo = line.split(" ");
+                if (userInfo.length >= 4) {
+                    String productId = userInfo[0];
+                    String productname = userInfo[1];
+                    String origin = userInfo[2];
+                    String dateTime = userInfo[3];
+                    String size = userInfo[4];
+                    double inprice = Double.parseDouble(userInfo[5]);
+                    double outprice =Double.parseDouble(userInfo[6]) ;
+                    int num = Integer.parseInt(userInfo[7]);
 
-                System.out.println("商品名："+productname);
-                System.out.println("售价："+price);
-                System.out.println("剩余："+number);
-                System.out.println("-------------------------");
+                    System.out.println("商品编号：" + productId);
+                    System.out.println("商品名称：" + productname);
+                    System.out.println("生产厂家：" + origin);
+                    System.out.println("生产日期：" + dateTime);
+                    System.out.println("型号：" + size);
+                    System.out.println("进价：" + inprice);
+                    System.out.println("零售价格：" + outprice);
+                    System.out.println("数量：" + num);
+                    System.out.println("-------------------------");
+                }
             }
-            
-            resultSet.close();
-        }catch(SQLException e){
-            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.println("读取商品信息时出错：" + e.getMessage());
         }
     }
 
     //添加商品信息
-    public void addProduct(){
-        System.out.println("\n---------添加商品---------");
-        System.out.print("请输入商品名：");
-        String name=scanner.next();
-        System.out.print("请输入价格：");
-        String price=scanner.next();
-        System.out.print("请输入库存：");
-        String number=scanner.next();
-            
-        try{
-            if (productExists(name)) {
-                System.out.println("商品已存在!");
-                return;
-            }
-    
-            String query = "INSERT INTO products (productname, price, number) VALUES (?,?,?)";
-            PreparedStatement preparedStatement=connection.prepareStatement(query);
-            preparedStatement.setString(1,name);
-            preparedStatement.setString(2,price);
-            preparedStatement.setString(3,number);
-            preparedStatement.executeUpdate();
-    
+    public void addProduct() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("请输入商品编号：");
+        String productID = scanner.nextLine();
+        System.out.print("请输入商品名称：");
+        String productname = scanner.nextLine();
+        System.out.print("请输入生产厂家：");
+        String origin = scanner.nextLine();
+        System.out.print("请输入生产日期：");
+        String datetime = scanner.nextLine();
+        System.out.print("请输入型号：");
+        String size = scanner.nextLine();
+        System.out.print("请输入进价：");
+        double inprice = scanner.nextDouble();
+        System.out.print("请输入零售价格：");
+        double outprice = scanner.nextDouble();
+        System.out.print("请输入数量：");
+        int num = scanner.nextInt();
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("D:\\Programming\\ShoppingSystem\\products.txt", true))) {
+            writer.write(productID + " " + productname + " " + origin + " " + datetime + " " + size + " " + inprice + " " + outprice + " " + num);
+            writer.newLine();
             System.out.println("添加成功！");
-    
-        }catch(SQLException e){
-            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.println("保存商品信息时出错：" + e.getMessage());
         }
     }
 
-    //判断商品是否存在
-    private boolean productExists(String productname) throws SQLException {
-        String query = "SELECT * FROM products WHERE productname = ?";
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setString(1, productname);
-        ResultSet resultSet = preparedStatement.executeQuery();
-        boolean exists = resultSet.next();
-        preparedStatement.close();
-        return exists;
-    }
-
     //修改商品信息
-    public void modifyProduct(){
-        System.out.println("\n---------修改商品信息---------");
-        System.out.print("请输入要修改信息的商品名：");
-        String productname=scanner.next();
-
-        try {
-            if (!productExists(productname)) {
-                System.out.println("商品不存在!");
-                return;
+    public void modifyProduct(String id) {
+        List<String> lines = new ArrayList<>();
+        scanner.nextLine();
+        try (BufferedReader reader = new BufferedReader(new FileReader("D:\\Programming\\ShoppingSystem\\products.txt"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] userInfo = line.split(" ");
+                if (userInfo.length >= 4) {
+                    String productId = userInfo[0];
+                    if (id.equals(productId)) {
+                        System.out.print("请输入新的零售价格: ");
+                        double newprice = scanner.nextDouble();
+                        userInfo[6] = String.valueOf(newprice);
+                        line = String.join(" ", userInfo);
+                        System.out.println("已重置零售价格！");
+                    }
+                }
+                lines.add(line);
             }
-        
-        System.out.print("修改商品价格：");
-        String price=scanner.next();
+        } catch (IOException e) {
+            System.out.println("读取商品信息时出错：" + e.getMessage());
+            return;
+        }
 
-        String updateQuery = "UPDATE products SET price = ? WHERE productname = ?";
-        PreparedStatement preparedStatement = connection.prepareStatement(updateQuery);
-        preparedStatement.setString(1, price);
-        preparedStatement.setString(2,productname);
-        preparedStatement.executeUpdate();
-
-        System.out.println("商品信息修改成功!");
-
-        preparedStatement.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("D:\\Programming\\ShoppingSystem\\products.txt"))) {
+            for (String line : lines) {
+                writer.write(line);
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            System.out.println("保存商品信息时出错：" + e.getMessage());
         }
     }
 
     //删除商品信息
-    public void deleteProduct(){
-        System.out.print("请输入要删除信息的商品名：");
-        String name=scanner.next();
-        try {
-            if (!productExists(name)) {
-                System.out.println("商品不存在!");
-                return;
+    public void deleteProduct(String id) {
+        File file=new File("D:\\Programming\\ShoppingSystem\\products.txt");
+        File tempFile=new File("D:\\Programming\\ShoppingSystem\\tempProducts.txt");
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file));
+             BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] userInfo = line.split(" ");
+                if (userInfo.length >= 4) {
+                    String productId = userInfo[0];
+                    if (productId.equals(id)) {
+                        continue;
+                    }
+                }
+                writer.write(line);
+                writer.newLine();
             }
-        String deletequery="DELETE FROM products WHERE productname = ?";
-        PreparedStatement preparedStatement = connection.prepareStatement(deletequery);
-        preparedStatement.setString(1, name);
-        preparedStatement.executeUpdate();
 
-        System.out.println("商品信息删除成功！");
+        } catch (IOException e) {
+            System.out.println("执行删除操作时出错：" + e.getMessage());
+            return;
+        }
 
-        } catch (SQLException e) {
-            e.printStackTrace();
+        // 删除原始文件
+        if (file.delete()) {
+            // 重命名临时文件为原始文件名
+            if (!tempFile.renameTo(file)) {
+                System.out.println("重命名文件时出错");
+            } else {
+                System.out.println("删除商品信息成功！");
+            }
+        } else {
+            System.out.println("删除原始文件时出错");
         }
     }
 
     //查询商品信息
-    public void checkProduct(){
-        System.out.print("请输入要查询的商品名：");
-        String name=scanner.next();
+    public void checkProduct(String checkname,String productid){
+        System.out.println("-----------------------");
+        try (BufferedReader reader = new BufferedReader(new FileReader("D:\\Programming\\ShoppingSystem\\products.txt"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] userInfo = line.split(" ");
+                if (userInfo.length >= 4) {
+                    String productId = userInfo[0];
+                    String productname = userInfo[1];
+                    String origin=userInfo[2];
+                    String dateTime = userInfo[3];
+                    String size=userInfo[4];
+                    double inprice=Double.parseDouble(userInfo[5]);
+                    double outprice=Double.parseDouble(userInfo[6]);
+                    int num=Integer.parseInt(userInfo[7]);
 
-        String query= "SELECT * FROM products WHERE productname = ?";
-            try (Connection connection = DriverManager.getConnection(DB_URL);
-                 PreparedStatement statement = connection.prepareStatement(query)) {
-    
-                statement.setString(1, name);
-                ResultSet resultSet = statement.executeQuery();
-    
-                if (resultSet.next()) {
-                    String productname = resultSet.getString("productname");
-                    String price = resultSet.getString("price");
-                    String number =resultSet.getString("number");
-    
-                    System.out.println("\n-------------------------");
-                    System.out.println("商品名：" +productname);
-                    System.out.println("售价：" + price);
-                    System.out.println("剩余："+number);
-                    System.out.println("------------------------" );
-                } else {
-                    System.out.println("商品不存在！");
+                    if ((productid.equals(productId)) || (productname.equals(checkname))) {
+                        System.out.println("商品编号：" + productId);
+                        System.out.println("商品名称：" + productname);
+                        System.out.println("生产厂家："+origin);
+                        System.out.println("生产日期：" +dateTime);
+                        System.out.println("型号："+size);
+                        System.out.println("进价："+inprice);
+                        System.out.println("零售价格："+outprice);
+                        System.out.println("数量："+num);
+                        System.out.println("-------------------------");
+                    }else {
+                        System.out.print(" ");
+                    }
                 }
-                
-            } catch (SQLException e) {
-                e.printStackTrace();
             }
-    }
-
-    //商品加入购物车(判断是否存在该商品)
-    public boolean addToCart(String addName){
-        try{
-            if (!productExists(addName)) {
-                System.out.println("商品不存在，无法加入购物车!");
-                return false;
-            }
-        }catch (SQLException e) {
-            e.printStackTrace();
+        }catch (IOException e) {
+            System.out.println("读取商品信息时出错：" + e.getMessage());
         }
-        return true;
     }
 }
