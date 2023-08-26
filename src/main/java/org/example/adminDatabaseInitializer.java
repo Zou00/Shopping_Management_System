@@ -20,8 +20,7 @@ public class adminDatabaseInitializer{
             statement.executeUpdate(createTableQuery);
 
             String insertDataQuery = "INSERT INTO admins (username, password) VALUES " +
-                    "('admin1', 'password1')," +
-                    "('admin2', 'password2')";
+                    "('admin', 'ynuinfo#777')" ;
             statement.executeUpdate(insertDataQuery);
 
             System.out.println("管理员数据库初始化成功!");
