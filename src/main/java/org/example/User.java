@@ -1,59 +1,77 @@
 package org.example;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.security.SecureRandom;
-import java.util.Random;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+
 
 public class User {
     Scanner scanner = new Scanner(System.in);
     //注册
     public void register() {
-        Scanner scanner = new Scanner(System.in);
         System.out.print("请输入用户名(不少于5个字符)：");
         String username = scanner.nextLine();
         while (username.length() < 5) {
             System.out.print("用户名长度不能少于5个字符，请重新输入：");
             username = scanner.nextLine();
-            }
+        }
 
-            System.out.print("请设置密码：");
-            String password1 = scanner.nextLine();
-            while (password1.length() <= 8 || !isPasswordValid(password1)) {
-                System.out.println("密码长度必须大于8个字符，并且必须是大小写字母、数字和标点符号的组合，请重新输入：");
-                password1 = scanner.nextLine();
-            }
+        System.out.print("请设置密码：");
+        String password1 = scanner.nextLine();
+        while (password1.length() <= 8 || !isPasswordValid(password1)) {
+            System.out.println("密码长度必须大于8个字符，并且必须是大小写字母、数字和标点符号的组合，请重新输入：");
+            password1 = scanner.nextLine();
+        }
         // 获取当前时间作为注册时间
         LocalDateTime registrationDateTime = LocalDateTime.now();
 
-        String userID=generateRandomId();
-        String userLevel="铜牌客户";
-        double consumption=0.0;
+        String userID = generateRandomId();
+        String userLevel = "铜牌客户";
+        double consumption = 0.0;
 
         System.out.print("请输入手机号：");
-        String phonenumber=scanner.nextLine();
+        String phonenumber = scanner.nextLine();
         System.out.print("请输入邮箱：");
-        String email=scanner.nextLine();
+        String email = scanner.nextLine();
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("D:\\Programming\\ShoppingSystem\\listUsers.txt", true))) {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss");
-            String formattedDateTime = registrationDateTime.format(formatter);
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("用户信息");
 
-            writer.write(userID+" "+username + " " + password1 + " "+userLevel+" "+ formattedDateTime+" "+consumption+" "+phonenumber+" "+email);
+            // 创建表头
+            Row headerRow = sheet.createRow(0);
+            headerRow.createCell(0).setCellValue("用户ID");
+            headerRow.createCell(1).setCellValue("用户名");
+            headerRow.createCell(2).setCellValue("密码");
+            headerRow.createCell(3).setCellValue("用户等级");
+            headerRow.createCell(4).setCellValue("注册时间");
+            headerRow.createCell(5).setCellValue("消费金额");
+            headerRow.createCell(6).setCellValue("手机号");
+            headerRow.createCell(7).setCellValue("邮箱");
 
-            writer.newLine();
-            System.out.println("注册成功！");
+            // 创建数据行
+            Row dataRow = sheet.createRow(1);
+            dataRow.createCell(0).setCellValue(userID);
+            dataRow.createCell(1).setCellValue(username);
+            dataRow.createCell(2).setCellValue(password1);
+            dataRow.createCell(3).setCellValue(userLevel);
+            dataRow.createCell(4).setCellValue(registrationDateTime.toString());
+            dataRow.createCell(5).setCellValue(consumption);
+            dataRow.createCell(6).setCellValue(phonenumber);
+            dataRow.createCell(7).setCellValue(email);
+
+            // 保存为XLSX文件
+            try (FileOutputStream fileOut = new FileOutputStream("D:\\Programming\\ShoppingSystem\\listUsers.xlsx")) {
+                workbook.write(fileOut);
+                System.out.println("注册信息保存成功！");
+            } catch (IOException e) {
+                System.out.println("保存用户信息时出错：" + e.getMessage());
+            }
         } catch (IOException e) {
-            System.out.println("保存用户信息时出错：" + e.getMessage());
+            System.out.println("创建工作簿时出错：" + e.getMessage());
         }
     }
 
@@ -126,13 +144,13 @@ public class User {
 
     //判断密码输入超过五次
     private static boolean iflogin(String username, String password) {
-        try (BufferedReader reader = new BufferedReader(new FileReader("D:\\Programming\\ShoppingSystem\\listUsers.txt"))) {
-            String line;
+        try (Workbook workbook = WorkbookFactory.create(new FileInputStream("D:\\Programming\\ShoppingSystem\\listUsers.xlsx"))) {
+            Sheet sheet = workbook.getSheetAt(0);
+
             int attempts = 0;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(" ");
-                String storedUsername = parts[1];
-                String storedPassword = parts[2];
+            for (Row row : sheet) {
+                String storedUsername = row.getCell(1).getStringCellValue();
+                String storedPassword = row.getCell(2).getStringCellValue();
 
                 if (storedUsername.equals(username)) {
                     if (storedPassword.equals(password)) {
@@ -148,77 +166,139 @@ public class User {
             }
         } catch (IOException e) {
             System.out.println("读取用户登录文件时出错：" + e.getMessage());
+        } catch (InvalidFormatException e) {
+            System.out.println("非法的Excel文件格式：" + e.getMessage());
         }
+
         return false; // 用户名不存在
     }
 
+
     //修改密码
-    public void changePassword(String password){
-        List<String> lines = new ArrayList<>();
-        scanner.nextLine();
-        try (BufferedReader reader = new BufferedReader(new FileReader("D:\\Programming\\ShoppingSystem\\listUsers.txt"))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] userInfo = line.split(" ");
-                String passWord = userInfo[2];
-                if (password.equals(passWord)) {
+    public void changePassword(String password) {
+        Scanner scanner = new Scanner(System.in);
+        List<String[]> userInfoList = new ArrayList<>();
+        try (Workbook workbook = WorkbookFactory.create(new FileInputStream("D:\\Programming\\ShoppingSystem\\listUsers.xlsx"))) {
+            Sheet sheet = workbook.getSheetAt(0); // 假设用户信息在第一个Sheet中
+
+            for (Row row : sheet) {
+                String storedPassword = row.getCell(2).getStringCellValue();
+
+                if (password.equals(storedPassword)) {
                     System.out.print("请输入新密码: ");
-                    String newpassword = scanner.next();
-                    while (newpassword.length() <= 8 || !isPasswordValid(newpassword)) {
+                    String newPassword = scanner.next();
+                    while (newPassword.length() <= 8 || !isPasswordValid(newPassword)) {
                         System.out.println("密码长度必须大于8个字符，并且必须是大小写字母、数字和标点符号的组合，请重新输入：");
-                        newpassword = scanner.nextLine();
+                        newPassword = scanner.nextLine();
                     }
-                    userInfo[2] = newpassword;
-                    line = String.join(" ", userInfo);
+                    row.getCell(2).setCellValue(newPassword);
                     System.out.println("成功修改密码！");
                 }
-                lines.add(line);
+
+                int lastCellNum = row.getLastCellNum();
+                String[] userInfo = new String[lastCellNum];
+                for (int i = 0; i < lastCellNum; i++) {
+                    Cell cell = row.getCell(i);
+                    if (cell != null) {
+                        userInfo[i] = cell.getStringCellValue();
+                    } else {
+                        userInfo[i] = ""; // 空单元格处理
+                    }
+                }
+                userInfoList.add(userInfo);
             }
         } catch (IOException e) {
             System.out.println("读取用户信息时出错：" + e.getMessage());
             return;
+        } catch (InvalidFormatException e) {
+            System.out.println("非法的Excel文件格式：" + e.getMessage());
+            return;
         }
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("D:\\Programming\\ShoppingSystem\\listUsers.txt"))) {
-            for (String line : lines) {
-                writer.write(line);
-                writer.newLine();
+        try (Workbook workbook = WorkbookFactory.create(new FileInputStream("D:\\Programming\\ShoppingSystem\\listUsers.xlsx"));
+             FileOutputStream fileOut = new FileOutputStream("D:\\Programming\\ShoppingSystem\\listUsers.xlsx")) {
+
+            Sheet sheet = workbook.getSheetAt(0);
+            int rowNum = 0;
+            for (String[] userInfo : userInfoList) {
+                Row row = sheet.getRow(rowNum);
+                if (row == null) {
+                    row = sheet.createRow(rowNum);
+                }
+                for (int i = 0; i < userInfo.length; i++) {
+                    String cellValue = userInfo[i];
+                    row.createCell(i).setCellValue(cellValue);
+                }
+                rowNum++;
             }
+
+            workbook.write(fileOut);
         } catch (IOException e) {
             System.out.println("保存用户信息时出错：" + e.getMessage());
+        } catch (InvalidFormatException e) {
+            System.out.println("非法的Excel文件格式：" + e.getMessage());
         }
     }
 
     //重置密码
-    public void resetPassword(String username,String email){
-        List<String> lines=new ArrayList<>();
-        scanner.nextLine();
-        try (BufferedReader reader = new BufferedReader(new FileReader("D:\\Programming\\ShoppingSystem\\listUsers.txt"))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] userInfo = line.split(" ");
-                String userName = userInfo[1];
-                String Email=userInfo[7];
-                if (username.equals(userName) && email.equals(Email)) {
-                    String newpassword =generateRandomPassword(8) ;
-                    userInfo[2] = newpassword;
-                    line = String.join(" ", userInfo);
-                    System.out.println("密码修改成功！已发送新密码至邮箱:"+email);
+    public void resetPassword(String username, String email) {
+        Scanner scanner = new Scanner(System.in);
+        List<String[]> userInfoList = new ArrayList<>();
+        try (Workbook workbook = WorkbookFactory.create(new FileInputStream("D:\\Programming\\ShoppingSystem\\listUsers.xlsx"))) {
+            Sheet sheet = workbook.getSheetAt(0); // 假设用户信息在第一个Sheet中
+
+            for (Row row : sheet) {
+                String storedUsername = row.getCell(1).getStringCellValue();
+                String storedEmail = row.getCell(7).getStringCellValue();
+
+                if (username.equals(storedUsername) && email.equals(storedEmail)) {
+                    String newPassword = generateRandomPassword(8);
+                    row.getCell(2).setCellValue(newPassword);
+                    System.out.println("密码修改成功！已发送新密码至邮箱：" + email);
                 }
-                lines.add(line);
+
+                int lastCellNum = row.getLastCellNum();
+                String[] userInfo = new String[lastCellNum];
+                for (int i = 0; i < lastCellNum; i++) {
+                    Cell cell = row.getCell(i);
+                    if (cell != null) {
+                        userInfo[i] = cell.getStringCellValue();
+                    } else {
+                        userInfo[i] = "";
+                    }
+                }
+                userInfoList.add(userInfo);
             }
         } catch (IOException e) {
             System.out.println("读取用户信息时出错：" + e.getMessage());
             return;
+        } catch (InvalidFormatException e) {
+            System.out.println("非法的Excel文件格式：" + e.getMessage());
+            return;
         }
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("D:\\Programming\\ShoppingSystem\\listUsers.txt"))) {
-            for (String line : lines) {
-                writer.write(line);
-                writer.newLine();
+        try (Workbook workbook = WorkbookFactory.create(new FileInputStream("D:\\Programming\\ShoppingSystem\\listUsers.xlsx"));
+             FileOutputStream fileOut = new FileOutputStream("D:\\Programming\\ShoppingSystem\\listUsers.xlsx")) {
+
+            Sheet sheet = workbook.getSheetAt(0); // 假设用户信息在第一个Sheet中
+            int rowNum = 0;
+            for (String[] userInfo : userInfoList) {
+                Row row = sheet.getRow(rowNum);
+                if (row == null) {
+                    row = sheet.createRow(rowNum);
+                }
+                for (int i = 0; i < userInfo.length; i++) {
+                    String cellValue = userInfo[i];
+                    row.createCell(i).setCellValue(cellValue);
+                }
+                rowNum++;
             }
+
+            workbook.write(fileOut);
         } catch (IOException e) {
             System.out.println("保存用户信息时出错：" + e.getMessage());
+        } catch (InvalidFormatException e) {
+            System.out.println("非法的Excel文件格式：" + e.getMessage());
         }
     }
 
@@ -235,5 +315,3 @@ public class User {
         return password.toString();
     }
 }
-
-

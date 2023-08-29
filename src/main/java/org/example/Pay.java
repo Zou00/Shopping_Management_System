@@ -1,5 +1,7 @@
 package org.example;
 
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -15,7 +17,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 
 public class Pay {
-    public static void calculateTotalPrice(String cartFile, String productFile,String historyFile) {
+    public static void calculateTotalPrice(String cartFile, String productFile, String historyFile) {
         Map<String, Integer> cartItems = readCartItems(cartFile);
         Map<String, Double> productPrices = readProductPrices(productFile);
 
@@ -43,15 +45,15 @@ public class Pay {
     private static Map<String, Integer> readCartItems(String cartFile) {
         Map<String, Integer> cartItems = new HashMap<>();
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(cartFile))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(" ");
-                if (parts.length == 2) {
-                    String productId = parts[0];
-                    int num = Integer.parseInt(parts[1]);
-                    cartItems.put(productId, num);
-                }
+        try (Workbook workbook = WorkbookFactory.create(new FileInputStream(cartFile))) {
+            Sheet sheet = workbook.getSheetAt(0); // 假设购物车商品信息在第一个Sheet中
+
+            Iterator<Row> iterator = sheet.iterator();
+            while (iterator.hasNext()) {
+                Row row = iterator.next();
+                String productId = row.getCell(0).getStringCellValue();
+                int num = (int) row.getCell(1).getNumericCellValue();
+                cartItems.put(productId, num);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -63,15 +65,15 @@ public class Pay {
     private static Map<String, Double> readProductPrices(String productFile) {
         Map<String, Double> productPrices = new HashMap<>();
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(productFile))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(" ");
-                if (parts.length >= 2) {
-                    String productId = parts[0];
-                    double price = Double.parseDouble(parts[6]);
-                    productPrices.put(productId, price);
-                }
+        try (Workbook workbook = WorkbookFactory.create(new FileInputStream(productFile))) {
+            Sheet sheet = workbook.getSheetAt(0); // 假设商品价格信息在第一个Sheet中
+
+            Iterator<Row> iterator = sheet.iterator();
+            while (iterator.hasNext()) {
+                Row row = iterator.next();
+                String productId = row.getCell(0).getStringCellValue();
+                double price = row.getCell(6).getNumericCellValue();
+                productPrices.put(productId, price);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -81,52 +83,47 @@ public class Pay {
     }
 
     private static void updateProductQuantity(String productFile, String productId, int quantityDelta) {
-        try {
-            List<String> lines = new ArrayList<>();
+        try (Workbook workbook = WorkbookFactory.create(new FileInputStream(productFile))) {
+            Sheet sheet = workbook.getSheetAt(0); // 假设商品信息在第一个Sheet中
 
-            // 读取商品文件并找到对应行
-            try (BufferedReader reader = new BufferedReader(new FileReader(productFile))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] parts = line.split(" ");
-                    if (parts.length == 8) {
-                        String fileProductId = parts[0].trim();
-                        if (fileProductId.equals(productId)) {
-                            int currentnum = Integer.parseInt(parts[7].trim());
-                            int newnum = Math.max(0, currentnum + quantityDelta);
-                            parts[7] = String.valueOf(newnum);  // 更新商品数量
-                            line = String.join(" ", parts);  // 将更新后的行拼接回字符串
-                        }
-                    }
-                    lines.add(line);  // 将行添加到列表中
+            for (Row row : sheet) {
+                String fileProductId = row.getCell(0).getStringCellValue();
+                if (fileProductId.equals(productId)) {
+                    int currentnum = (int) row.getCell(7).getNumericCellValue();
+                    int newnum = Math.max(0, currentnum + quantityDelta);
+                    row.getCell(7).setCellValue(newnum); // 更新商品数量
+                    break;
                 }
             }
 
-            // 写入更新后的商品文件
-            try (PrintWriter writer = new PrintWriter(new FileWriter(productFile))) {
-                for (String line : lines) {
-                    writer.println(line);
-                }
+            try (FileOutputStream fileOut = new FileOutputStream(productFile)) {
+                workbook.write(fileOut);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-
     private static void clearCartItems(String cartFile) {
-        try {
-            PrintWriter writer = new PrintWriter(cartFile);
-            writer.close();
+        try (Workbook workbook = WorkbookFactory.create(new FileInputStream(cartFile));
+             FileOutputStream fileOut = new FileOutputStream(cartFile)) {
+
+            Sheet sheet = workbook.getSheetAt(0); // 假设购物车商品信息在第一个Sheet中
+
+            for (Row row : sheet) {
+                sheet.removeRow(row);
+            }
+
+            workbook.write(fileOut);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public void simulatepay() {
-        String cartFile = "D:\\Programming\\ShoppingSystem\\cart.txt";
-        String productFile = "D:\\Programming\\ShoppingSystem\\products.txt";
-        String historyFile="D:\\Programming\\ShoppingSystem\\History.txt";
+        String cartFile = "D:\\Programming\\ShoppingSystem\\cart.xlsx";
+        String productFile = "D:\\Programming\\ShoppingSystem\\products.xlsx";
+        String historyFile = "D:\\Programming\\ShoppingSystem\\History.xlsx";
 
         Scanner scanner = new Scanner(System.in);
         System.out.print("请选择使用的支付方式(1支付宝、2微信、3银行卡):");
@@ -135,47 +132,53 @@ public class Pay {
         calculateTotalPrice(cartFile, productFile, historyFile);
     }
 
-    //保存购物历史
-    public static void saveHistory(String historyFile,String productID, int num, LocalDateTime DateTime) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(historyFile, true))) {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss");
-            String formattedDateTime = DateTime.format(formatter);
+    // 保存购物历史
+    public static void saveHistory(String historyFile, String productId, int num, LocalDateTime dateTime) {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("购物历史");
 
-            writer.write(productID + " " + num + " " + formattedDateTime);
-            writer.newLine();
+            // 获取当前行数作为新行的索引
+            int rowIndex = sheet.getLastRowNum() + 1;
+
+            // 创建新行，并写入数据
+            Row row = sheet.createRow(rowIndex);
+            Cell cellProductId = row.createCell(0);
+            cellProductId.setCellValue(productId);
+            Cell cellNum = row.createCell(1);
+            cellNum.setCellValue(num);
+            Cell cellDateTime = row.createCell(2);
+            cellDateTime.setCellValue(dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+            // 保存Excel文件
+            try (FileOutputStream fileOut = new FileOutputStream(historyFile)) {
+                workbook.write(fileOut);
+            }
         } catch (IOException e) {
-            System.out.println("保存商品信息时出错：" + e.getMessage());
+            System.out.println("保存购物历史时出错：" + e.getMessage());
         }
     }
 
-    //查看购物历史
-    public void History() {
+    // 查看购物历史
+    public void history(String historyFile) {
         System.out.println("-----------------------");
-        try (BufferedReader reader = new BufferedReader(new FileReader("D:\\Programming\\ShoppingSystem\\History.txt"))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] cartInfo = line.split(" ");
-                String productId = cartInfo[0];
-                int num = Integer.parseInt(cartInfo[1]);
-                String DateTime = cartInfo[2];
+        try (Workbook workbook = WorkbookFactory.create(new FileInputStream(historyFile))) {
+            Sheet sheet = workbook.getSheetAt(0);
 
-                // 定义日期时间格式
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss");
+            for (Row row : sheet) {
+                String productId = row.getCell(0).getStringCellValue();
+                int num = (int) row.getCell(1).getNumericCellValue();
+                String dateTimeStr = row.getCell(2).getStringCellValue();
 
-                // 解析日期时间字符串
-                LocalDateTime dateTime = LocalDateTime.parse(DateTime, formatter);
-                String outputDateTime = dateTime.format(formatter);
+                LocalDateTime dateTime = LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
                 System.out.println("商品ID：" + productId);
                 System.out.println("数量：" + num);
-                System.out.println("购买时间：" + outputDateTime);
+                System.out.println("购买时间：" + dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                 System.out.println("-------------------------");
             }
-        } catch(IOException e){
-            System.out.println("读取购物信息时出错：" + e.getMessage());
+        } catch (IOException e) {
+            System.out.println("读取购物历史时出错：" + e.getMessage());
         }
     }
 }
-
-
 
